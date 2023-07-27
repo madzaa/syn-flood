@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"reflect"
 	"testing"
 )
@@ -56,12 +57,64 @@ func Test_getUint32(t *testing.T) {
 		want []byte
 	}{
 		// TODO: Add test cases.
-		{name: "Magic number", args: args{dat: []byte{0xd4, 0xc3, 0xb2, 0xa1, 0x02, 0x00, 0x04}, bytes: 0}, want: []byte{0xD4, 0xC3, 0xB2, 0xA1}},
+		{name: "Magic number", args: args{dat: []byte{0xd4, 0xc3, 0xb2, 0xa1, 0x02, 0x00, 0x04, 0x00}, bytes: 0}, want: []byte{0xD4, 0xC3, 0xB2, 0xA1}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := getUint32(tt.args.dat, tt.args.bytes); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getUint32() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getHeader(t *testing.T) {
+	type args struct {
+		dat []byte
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  int
+		want1 int
+		want2 int
+	}{
+		// TODO: Add test cases.
+		{name: "Check magic number, major version and  minor version", args: args{dat: []byte{0xd4, 0xc3, 0xb2, 0xa1, 0x02, 0x00, 0x04, 0x00}}, want: 0xA1B2C3D4, want1: 2, want2: 4},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, got2 := getHeader(tt.args.dat)
+			if got != tt.want {
+				t.Errorf("getHeader() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("getHeader() got1 = %v, want %v", got1, tt.want1)
+			}
+			if got2 != tt.want2 {
+				t.Errorf("getHeader() got2 = %v, want %v", got2, tt.want2)
+			}
+		})
+	}
+}
+
+func Test_parsePacketHeaders(t *testing.T) {
+	dat, _ := os.ReadFile("synflood.pcap")
+	type args struct {
+		dat []byte
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		// TODO: Add test cases.
+		{"Check header count", args{dat: dat}, 95829},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := parsePacketHeaders(tt.args.dat); got != tt.want {
+				t.Errorf("parsePacketHeaders() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"os"
-	"time"
 )
 
 func check(e error) {
@@ -13,22 +12,22 @@ func check(e error) {
 }
 
 type PacketHeader struct {
-	Timestamp       uint32
-	TimestampU      uint32
-	CapturedPackets uint32
-	UntrucPackets   uint32
+	Timestamp          uint32
+	TimestampU         uint32
+	CapturedPackets    uint32
+	UntruncatedPackets uint32
 }
 
 func main() {
 	dat, err := os.ReadFile("synflood.pcap")
 	check(err)
 
-	majorVersion := le(dat[4:6])
-	minorVersion := le(dat[6:8])
-	magicNumber := be(dat[:4])
-	log.Printf("version %d.%d", majorVersion, minorVersion)
-	log.Printf("version %x", magicNumber)
+	getHeader(dat)
 
+	log.Printf("%d", parsePacketHeaders(dat))
+}
+
+func parsePacketHeaders(dat []byte) int {
 	var bytes uint32 = 24
 	counter := 0
 
@@ -38,16 +37,26 @@ func main() {
 		}
 
 		header := PacketHeader{
-			Timestamp:       le(getUint32(dat, bytes)),
-			TimestampU:      le(getUint32(dat, bytes+4)),
-			CapturedPackets: le(getUint32(dat, bytes+8)),
-			UntrucPackets:   le(getUint32(dat, bytes+12)),
+			Timestamp:          le(getUint32(dat, bytes)),
+			TimestampU:         le(getUint32(dat, bytes+4)),
+			CapturedPackets:    le(getUint32(dat, bytes+8)),
+			UntruncatedPackets: le(getUint32(dat, bytes+12)),
 		}
-		log.Printf("Timestamp: %s Captured Packets 0x%X, Untruncated Packets 0x%X", time.Unix(int64(header.Timestamp), 0), header.CapturedPackets, header.UntrucPackets)
 
 		bytes += header.CapturedPackets + 16
 		counter++
 	}
+	return counter
+}
+
+func getHeader(dat []byte) (int, int, int) {
+	if len(dat) < 8 {
+		panic("Header is too short")
+	}
+	magicNumber := le(dat[:4])
+	majorVersion := le(dat[4:6])
+	minorVersion := le(dat[6:8])
+	return int(magicNumber), int(majorVersion), int(minorVersion)
 }
 
 func getUint32(dat []byte, bytes uint32) []byte {
