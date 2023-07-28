@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"os"
 )
@@ -49,18 +50,21 @@ func parsePacketHeaders(dat []byte) int {
 	return counter
 }
 
-func getHeader(dat []byte) (int, int, int) {
+func getHeader(dat []byte) (int, int, int, error) {
 	if len(dat) < 8 {
-		panic("Header is too short")
+		return 0, 0, 0, errors.New("header is too short")
 	}
 	magicNumber := le(dat[:4])
 	majorVersion := le(dat[4:6])
 	minorVersion := le(dat[6:8])
-	return int(magicNumber), int(majorVersion), int(minorVersion)
+	return int(magicNumber), int(majorVersion), int(minorVersion), nil
 }
 
-func getUint32(dat []byte, bytes uint32) []byte {
-	return dat[bytes : bytes+4]
+func getUint32(dat []byte, bytes uint32) ([]byte, error) {
+	if len(dat) < 4 {
+		return nil, errors.New("byte array is too short")
+	}
+	return dat[bytes : bytes+4], nil
 }
 
 func le(bytes []byte) uint32 {

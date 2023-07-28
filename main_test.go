@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"reflect"
 	"testing"
@@ -78,13 +79,15 @@ func Test_getHeader(t *testing.T) {
 		want  int
 		want1 int
 		want2 int
+		want3 error
 	}{
 		// TODO: Add test cases.
-		{name: "Check magic number, major version and  minor version", args: args{dat: []byte{0xd4, 0xc3, 0xb2, 0xa1, 0x02, 0x00, 0x04, 0x00}}, want: 0xA1B2C3D4, want1: 2, want2: 4},
+		{name: "Check magic number, major version and  minor version", args: args{dat: []byte{0xd4, 0xc3, 0xb2, 0xa1, 0x02, 0x00, 0x04, 0x00}}, want: 0xA1B2C3D4, want1: 2, want2: 4, want3: nil},
+		{name: "Check magic number, major version and  minor version", args: args{dat: []byte{0xd4, 0xc3, 0xb2, 0xa1, 0x02, 0x00, 0x04}}, want: 0, want1: 0, want2: 0, want3: errors.New("header is too short")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2 := getHeader(tt.args.dat)
+			got, got1, got2, got3 := getHeader(tt.args.dat)
 			if got != tt.want {
 				t.Errorf("getHeader() got = %v, want %v", got, tt.want)
 			}
@@ -93,6 +96,9 @@ func Test_getHeader(t *testing.T) {
 			}
 			if got2 != tt.want2 {
 				t.Errorf("getHeader() got2 = %v, want %v", got2, tt.want2)
+			}
+			if got3 != nil && got3.Error() != tt.want3.Error() {
+				t.Errorf("getHeader() got3 = %v, want %v", got3, tt.want3)
 			}
 		})
 	}
